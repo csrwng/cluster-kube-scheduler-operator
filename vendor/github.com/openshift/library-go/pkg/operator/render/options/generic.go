@@ -82,7 +82,7 @@ func (o *GenericOptions) Validate() error {
 }
 
 // ApplyTo applies the options ot the given config struct using the provides text/template data.
-func (o *GenericOptions) ApplyTo(cfg *FileConfig, defaultConfig, bootstrapOverrides, postBootstrapOverrides Template, templateData interface{}, specialCases map[string]resourcemerge.MergeFunc) error {
+func (o *GenericOptions) ApplyTo(cfg *FileConfig, defaultConfig, bootstrapOverrides, postBootstrapOverrides, hostedOverrides Template, templateData interface{}, specialCases map[string]resourcemerge.MergeFunc) error {
 	var err error
 
 	cfg.BootstrapConfig, err = o.configFromDefaultsPlusOverride(defaultConfig, bootstrapOverrides, templateData, specialCases)
@@ -92,6 +92,10 @@ func (o *GenericOptions) ApplyTo(cfg *FileConfig, defaultConfig, bootstrapOverri
 
 	if cfg.PostBootstrapConfig, err = o.configFromDefaultsPlusOverride(defaultConfig, postBootstrapOverrides, templateData, specialCases); err != nil {
 		return fmt.Errorf("failed to generate post-bootstrap config (phase 2): %v", err)
+	}
+
+	if cfg.HostedBootstrapConfig, err = o.configFromDefaultsPlusOverride(defaultConfig, hostedOverrides, templateData, specialCases); err != nil {
+		return fmt.Errorf("failed to generate hosted config: %v", err)
 	}
 
 	// load and render templates
