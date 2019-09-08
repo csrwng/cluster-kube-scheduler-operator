@@ -1,0 +1,61 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: kube-scheduler
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: kube-scheduler
+  template:
+    metadata:
+      labels:
+        openshift.io/control-plane: "true"
+        openshift.io/component: "scheduler"
+        app: kube-scheduler
+      annotations:
+        openshift.io/run-level: "0"
+    spec:
+      containers:
+      - name: kube-scheduler
+        image: {{ .Image }}
+        imagePullPolicy: {{ .ImagePullPolicy }}
+        command: ["hyperkube", "kube-scheduler"]
+        args:
+        - --kubeconfig=/etc/kubernetes/scheduler-kubeconfig/kubeconfig
+        - --leader-elect=true
+        - --cert-dir=/var/run/kubernetes
+        - --port=0
+        - --authentication-kubeconfig=/etc/kubernetes/scheduler-kubeconfig/kubeconfig
+        - --authorization-kubeconfig=/etc/kubernetes/scheduler-kubeconfig/kubeconfig
+        workingDir: /var/log/kube-scheduler
+        volumeMounts:
+        - mountPath: /var/run/kubernetes
+          name: certdir
+        - mountPath: /etc/kubernetes/secrets
+          name: secrets
+          readOnly: true
+        - mountPath: /var/log/kube-scheduler
+          name: logs
+        - mountPath: /etc/kubernetes/config
+          name: config
+          readOnly: true
+        - mountPath: /etc/kubernetes/scheduler-kubeconfig
+          name: kubeconfig
+          readOnly: true
+      volumes:
+      - secret:
+          secretName: control-plane-certificates
+        name: secrets
+      - name: certdir
+        emptyDir: {}
+      - emptyDir: {}
+        name: logs
+      - secret:
+          secretName: scheduler-kubeconfig
+        name: kubeconfig
+      - configMap:
+          name: kube-scheduler-config
+        name: config

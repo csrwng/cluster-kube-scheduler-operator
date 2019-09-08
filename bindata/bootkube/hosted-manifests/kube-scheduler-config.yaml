@@ -1,0 +1,7 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: kube-scheduler-config
+data:
+  {{ .ConfigFileName }}: |
+    {{ .HostedBootstrapConfig | indent 4 }}
